@@ -1,5 +1,6 @@
 package com.commerxo.authserver.authserver.security;
 
+import com.commerxo.authserver.authserver.common.WebConstants;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +24,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.DelegatingJwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
-import org.springframework.security.oauth2.server.resource.authentication.JwtBearerTokenAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -32,6 +32,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Collection;
+
+import static com.commerxo.authserver.authserver.common.WebConstants.Account.*;
 
 @Configuration
 @EnableWebSecurity
@@ -48,9 +50,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(authorize ->
-                    authorize.anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(authorize -> {
+                    authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
+                    authorize.requestMatchers(ACCOUNT + USER_ACCOUNT_REGISTER).permitAll();
+                    authorize.anyRequest().authenticated();
+                })
                 // Form login handles the redirect to the login page from the
                 // authorization server filter chain
                 .oauth2ResourceServer(oauth2->
@@ -60,8 +64,7 @@ public class SecurityConfig {
                         )
                 )
                 .exceptionHandling(ex ->ex.authenticationEntryPoint((request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
-
-                .formLogin(Customizer.withDefaults());
+                .formLogin(form -> form.loginPage("/login").permitAll());
 
         return http.build();
     }

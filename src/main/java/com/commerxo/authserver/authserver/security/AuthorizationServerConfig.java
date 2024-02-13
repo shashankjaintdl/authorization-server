@@ -10,6 +10,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
@@ -32,6 +33,7 @@ import org.springframework.security.oauth2.server.authorization.settings.OAuth2T
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import javax.sql.DataSource;
 import java.security.KeyPair;
@@ -71,8 +73,9 @@ public class AuthorizationServerConfig {
                 .authorizationService(oAuth2AuthorizationService());
 
         http.
-                exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        new LoginUrlAuthenticationEntryPoint("/login")
+                exceptionHandling(ex -> ex.defaultAuthenticationEntryPointFor(
+                        new LoginUrlAuthenticationEntryPoint("/login"),
+                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )).
                 // Accept access tokens for User Info and/or Client Registration
                 oauth2ResourceServer((resourceServer) -> resourceServer

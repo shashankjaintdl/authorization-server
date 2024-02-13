@@ -27,7 +27,7 @@ public class APIError {
         this(httpServletRequest);
         this.timestamp = new Date();
         this.statusCode = statusCode;
-        this.status = status.substring(3).trim();
+        this.status = status;
         this.errorMessage = errorMessage;
         this.stackTraceElement = stackTraceElement;
     }
