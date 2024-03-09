@@ -1,15 +1,16 @@
 package com.commerxo.authserver.authserver.service.impl;
 
+import com.commerxo.authserver.authserver.common.Roles;
 import com.commerxo.authserver.authserver.domain.RegisteredUser;
 import com.commerxo.authserver.authserver.domain.Role;
 import com.commerxo.authserver.authserver.dto.UserRegistrationRequest;
 import com.commerxo.authserver.authserver.exception.ResourceAlreadyExistException;
 import com.commerxo.authserver.authserver.repository.JpaUserRegistrationRepository;
-import com.commerxo.authserver.authserver.security.UserPrincipal;
 import com.commerxo.authserver.authserver.service.RoleService;
 import com.commerxo.authserver.authserver.service.UserRegistrationService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -21,8 +22,6 @@ import java.util.Set;
 
 @Service
 public class UserRegistrationServiceImpl implements UserRegistrationService {
-
-    public static final String DEFAULT_ROLE = "user";
 
     private final JpaUserRegistrationRepository userRegistrationRepository;
     private final RoleService roleService;
@@ -38,11 +37,11 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
     public RegisteredUser createUser(UserRegistrationRequest registrationRequest) {
         RegisteredUser existUser = this.userRegistrationRepository.findByUsername(registrationRequest.getUsername()).orElse(null);
         if(existUser != null)
-            throw new ResourceAlreadyExistException("");
+            throw new ResourceAlreadyExistException("User already exist with username => [ " + registrationRequest.getUsername() + " ]");
 
-        Role role = this.roleService.getByRoleName(DEFAULT_ROLE);
+        Role role = this.roleService.getByRoleName(Roles.USER.getValue());
         if(role == null)
-            throw new IllegalStateException("");
+            throw new IllegalStateException("Roles does not exist");
 
         RegisteredUser registeredUser = UserRegistrationRequest.mapToEntity(registrationRequest);
         registeredUser.setActive(true);
@@ -60,7 +59,7 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
     @Override
     public RegisteredUser getByUsername(String username, boolean active) {
         if(!StringUtils.hasText(username))
-            throw new IllegalArgumentException("");
+            throw new IllegalArgumentException("username");
         if(active){
             return this.userRegistrationRepository.findByUsernameAndActive(username, true).orElse(null);
         }
@@ -78,14 +77,26 @@ public class UserRegistrationServiceImpl implements UserRegistrationService {
             authorities.add(new SimpleGrantedAuthority(authority.getName()));
         });
 
-        return UserPrincipal.buildWithId(registeredUser.getId())
+        return User.builder()
                 .username(registeredUser.getUsername())
-                .emailId(registeredUser.getEmailId())
+                .password(registeredUser.getPassword())
                 .authorities(authorities)
-                .enabled(registeredUser.isActive())
-                .accountNonExpired(registeredUser.isAccountExpired())
-                .accountNonLocked(registeredUser.isAccountLocked())
+                .accountExpired(registeredUser.isAccountExpired())
+                .accountLocked(registeredUser.isAccountLocked())
+                .credentialsExpired(registeredUser.isCredentialExpired())
+                .disabled(!registeredUser.isActive())
                 .build();
+                //        return UserPrincipal.buildWithId(registeredUser.getId())
+//                .username(registeredUser.getUsername())
+//                .password(registeredUser.getPassword())
+//                .emailId(registeredUser.getEmailId())
+//                .authorities(authorities)
+//                .enabled(registeredUser.isActive())
+//                .accountExpired(registeredUser.isAccountExpired())
+//                .accountLocked(registeredUser.isAccountLocked())
+//                .authorities(authorities)
+//                .enabled(registeredUser.isActive())
+//                .build();
     }
 
 

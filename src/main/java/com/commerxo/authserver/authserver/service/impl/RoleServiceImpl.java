@@ -3,7 +3,9 @@ package com.commerxo.authserver.authserver.service.impl;
 import com.commerxo.authserver.authserver.common.APIResponse;
 import com.commerxo.authserver.authserver.domain.Role;
 import com.commerxo.authserver.authserver.dto.RoleCreateRequest;
+import com.commerxo.authserver.authserver.dto.RoleUpdateRequest;
 import com.commerxo.authserver.authserver.exception.ResourceAlreadyExistException;
+import com.commerxo.authserver.authserver.exception.ResourceNotFoundException;
 import com.commerxo.authserver.authserver.repository.JpaRoleRepository;
 import com.commerxo.authserver.authserver.service.RoleService;
 import org.springframework.http.HttpStatus;
@@ -27,20 +29,26 @@ public  class RoleServiceImpl implements RoleService {
     public void create(RoleCreateRequest roleCreateRequest) {
         Role existingRole = this.roleRepository.findByName(roleCreateRequest.getName()).orElse(null);
         if(existingRole != null)
-            throw new ResourceAlreadyExistException("");
+            throw new ResourceAlreadyExistException("Role already exist with name => [ " + roleCreateRequest.getName() + " ]");
 
         Role newRole = RoleCreateRequest.mapToEntity(roleCreateRequest);
 
-        newRole = this.roleRepository.save(newRole);
+        this.roleRepository.save(newRole);
+    }
 
-        if(!StringUtils.hasText(newRole.getId()))
-            throw new IllegalStateException("");
+    @Override
+    public void update(RoleUpdateRequest updateRequest) {
+        Role existingRole = this.roleRepository.findByName(updateRequest.getName()).orElse(null);
+        if(existingRole == null)
+            throw new ResourceNotFoundException("");
+
+        
     }
 
     @Override
     public List<Role> getAllByClientName(String clientName) {
         if(!StringUtils.hasText(clientName))
-            throw new IllegalArgumentException("");
+            throw new IllegalArgumentException("ClientName can't be empty!");
 
         return this.roleRepository
                 .findAllByClientName(clientName);

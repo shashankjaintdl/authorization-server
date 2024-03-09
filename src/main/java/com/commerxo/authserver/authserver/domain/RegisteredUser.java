@@ -30,12 +30,14 @@ public class RegisteredUser {
     private String emailId;
     private String phoneNo;
     private Set<Role> roles;
-    private boolean isEmailVerified =  false;
-    private boolean isPhoneNoVerified =  false;
-    private boolean isAccountLocked = false;
-    private boolean isAccountExpired = false;
-    private boolean isCredentialExpired = false;
-    private boolean active = false;
+    private Boolean isEmailVerified =  false;
+    private Boolean isPhoneNoVerified =  false;
+    private Boolean isAccountLocked = false;
+    private Boolean isAccountExpired = false;
+    private Boolean isCredentialExpired = false;
+    private Integer loginCount;
+    private Integer failedLoginAttempts;
+    private Boolean active = false;
 
     @Id
     @UuidGenerator
@@ -112,7 +114,7 @@ public class RegisteredUser {
     }
 
     @ManyToMany(
-            fetch = FetchType.LAZY,
+            fetch = FetchType.EAGER,
             cascade = {
                     CascadeType.ALL
             })
@@ -134,57 +136,74 @@ public class RegisteredUser {
     }
 
     @Column(name = "is_email_verified")
-    public boolean isEmailVerified() {
+    public Boolean isEmailVerified() {
         return isEmailVerified;
     }
 
-    public void setEmailVerified(boolean emailVerified) {
+    public void setEmailVerified(Boolean emailVerified) {
         isEmailVerified = emailVerified;
     }
 
     @Column(name = "is_phone_verified")
-    public boolean isPhoneNoVerified() {
+    public Boolean isPhoneNoVerified() {
         return isPhoneNoVerified;
     }
 
-    public void setPhoneNoVerified(boolean phoneNoVerified) {
+    public void setPhoneNoVerified(Boolean phoneNoVerified) {
         isPhoneNoVerified = phoneNoVerified;
     }
 
     @Column(name = "is_account_locked")
-    public boolean isAccountLocked() {
+    public Boolean isAccountLocked() {
         return isAccountLocked;
     }
 
-    public void setAccountLocked(boolean accountLocked) {
+    public void setAccountLocked(Boolean accountLocked) {
         isAccountLocked = accountLocked;
     }
 
     @Column(name = "is_account_expired")
-    public boolean isAccountExpired() {
+    public Boolean isAccountExpired() {
         return isAccountExpired;
     }
 
-    public void setAccountExpired(boolean accountExpired) {
+    public void setAccountExpired(Boolean accountExpired) {
         isAccountExpired = accountExpired;
     }
 
     @Column(name = "is_credential_expired")
-    public boolean isCredentialExpired() {
+    public Boolean isCredentialExpired() {
         return isCredentialExpired;
     }
 
-    public void setCredentialExpired(boolean credentialExpired) {
+    public void setCredentialExpired(Boolean credentialExpired) {
         isCredentialExpired = credentialExpired;
     }
 
-    @Column(name = "is_account_active")
+    @Column(name = "login_count")
+    public Integer getLoginCount() {
+        return loginCount;
+    }
 
-    public boolean isActive() {
+    public void setLoginCount(Integer loginCount) {
+        this.loginCount = loginCount;
+    }
+
+    @Column(name = "failed_login_attempt")
+    public Integer getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(Integer failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    @Column(name = "is_account_active")
+    public Boolean isActive() {
         return active;
     }
 
-    public void setActive(boolean active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 }

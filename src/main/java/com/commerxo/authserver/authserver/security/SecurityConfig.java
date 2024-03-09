@@ -1,20 +1,22 @@
 package com.commerxo.authserver.authserver.security;
 
-import com.commerxo.authserver.authserver.common.WebConstants;
+import com.commerxo.authserver.authserver.repository.JpaUserRegistrationRepository;
+import com.commerxo.authserver.authserver.security.events.AuthenticationFailureListener;
+import com.commerxo.authserver.authserver.service.RoleService;
+import com.commerxo.authserver.authserver.service.impl.UserRegistrationServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +28,7 @@ import org.springframework.security.oauth2.server.resource.authentication.Delega
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -41,10 +44,14 @@ public class SecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
     private final JwtDecoder jwtDecoder;
+    private final RoleService roleService;
+    private final JpaUserRegistrationRepository userRegistrationRepository;
 
-    public SecurityConfig(PasswordEncoder passwordEncoder, JwtDecoder jwtDecoder) {
+    public SecurityConfig(PasswordEncoder passwordEncoder, JwtDecoder jwtDecoder, RoleService roleService, JpaUserRegistrationRepository userRegistrationRepository) {
         this.passwordEncoder = passwordEncoder;
         this.jwtDecoder = jwtDecoder;
+        this.roleService = roleService;
+        this.userRegistrationRepository = userRegistrationRepository;
     }
 
     @Bean
@@ -62,17 +69,28 @@ public class SecurityConfig {
                                 jwtConfigurer
                                         .authenticationManager(providerManager())
                         )
-                )
-                .exceptionHandling(ex ->ex.authenticationEntryPoint((request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
-                .formLogin(form -> form.loginPage("/login").permitAll());
+                ).exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(
+                                (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                ).formLogin(
+                        form ->
+                            form.loginPage("/login").permitAll()
 
+                );
         return http.build();
     }
+
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(){
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
         provider.setUserDetailsService(userDetails());
         return provider;
+    }
+
+    @Bean
+    public AuthenticationEventPublisher authenticationEventPublisher(){
+        return new DefaultAuthenticationEventPublisher();
     }
 
     @Bean
@@ -82,7 +100,9 @@ public class SecurityConfig {
 
     @Bean
     public ProviderManager providerManager(){
-        return new ProviderManager(daoAuthenticationProvider(),jwtAuthenticationProvider());
+        ProviderManager providerManager = new ProviderManager(daoAuthenticationProvider(),jwtAuthenticationProvider());
+        providerManager.setAuthenticationEventPublisher(authenticationEventPublisher());
+        return providerManager;
     }
 
 
@@ -99,6 +119,7 @@ public class SecurityConfig {
                 .ignoring()
                 .requestMatchers("/webjars/**", "/images/**", "/css/**", "/assets/**", "/favicon.ico");
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -111,14 +132,10 @@ public class SecurityConfig {
         return source;
     }
 
+
     @Bean
     public UserDetailsService userDetails(){
-        UserDetails userDetails = User.builder()
-                .username("user")
-                .password(passwordEncoder.encode("pass"))
-                .roles("USER")
-                .build();
-        return new InMemoryUserDetailsManager(userDetails);
+        return new UserRegistrationServiceImpl(userRegistrationRepository, roleService);
     }
 
 }

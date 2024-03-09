@@ -2,6 +2,7 @@ package com.commerxo.authserver.authserver.web;
 
 import com.commerxo.authserver.authserver.common.APIResponse;
 import com.commerxo.authserver.authserver.dto.RoleCreateRequest;
+import com.commerxo.authserver.authserver.dto.RoleUpdateRequest;
 import com.commerxo.authserver.authserver.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,17 @@ public class RolesEndpoint {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(new APIResponse<>(HttpStatus.CREATED, "Role created successfully!"));
+    }
+
+    @RequestMapping(
+            path = Role.UPDATE_ROLE,
+            method = RequestMethod.PUT,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<APIResponse<String>> editRole(@RequestBody @Valid RoleUpdateRequest updateRequest){
+
+        return null;
     }
 
 }

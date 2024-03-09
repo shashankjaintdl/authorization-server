@@ -18,6 +18,8 @@ public class WebConstants {
 
         public static final String CREATE_ROLE = "/create";
 
+        public static final String UPDATE_ROLE = "/update";
+
 
     }
 }

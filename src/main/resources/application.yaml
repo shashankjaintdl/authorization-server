@@ -2,6 +2,11 @@ server:
   port: 9090
 
 spring:
+  mail:
+    test-connection: true
+    templates:
+      path: test-templates
+
   profiles:
     active: dev
 
@@ -12,13 +17,28 @@ spring:
           jwk-set-uri: http://localhost:9090/oauth2/jwks
           issuer-uri: http://localhost:9090
 
-logging:
-  level:
-    root: DEBUG
+
+app:
+  mail:
+    username: jainshashank562@gmail.com
+    password: wpjfvcyonutyzdux
+    host: smtp.gmail.com
+    port: 587
+    smtp: true
+    tls: true
+    debug: true
+    testConnection: true
+  security:
+    login:
+      max-count: 3
+
+#logging:
+#  level:
+#    root: DEBUG
 #  org:
 #    hibernate:
 #      SQL: DEBUG
 #      type: TRACE
-    springframework:
-      security: DEBUG
+#    springframework:
+#      security: DEBUG
 #      web: DEBUG

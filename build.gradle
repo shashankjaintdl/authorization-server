@@ -33,6 +33,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.freemarker:freemarker'
+
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 //	implementation 'org.springframework.cloud:spring-cloud-starter-config'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
