@@ -4,7 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 @Entity
@@ -19,7 +23,7 @@ import java.util.Set;
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id"
 )
-public class RegisteredUser {
+public class RegisteredUser implements UserDetails {
 
     private String id;
     private String username;
@@ -32,12 +36,17 @@ public class RegisteredUser {
     private Set<Role> roles;
     private Boolean isEmailVerified =  false;
     private Boolean isPhoneNoVerified =  false;
-    private Boolean isAccountLocked = false;
-    private Boolean isAccountExpired = false;
-    private Boolean isCredentialExpired = false;
+    private Boolean isAccountNonLocked = false;
+    private Boolean isAccountNonExpired = false;
+    private Boolean isCredentialsNonExpired = false;
     private Integer loginCount;
     private Integer failedLoginAttempts;
-    private Boolean active = false;
+    private String mfaSecret;
+    private String mfaKeyId;
+    private Boolean mfaEnabled;
+    private Boolean mfaRegistered;
+    private Boolean securityPhoneNoEnabled;
+    private Boolean enabled = false;
 
     @Id
     @UuidGenerator
@@ -50,6 +59,7 @@ public class RegisteredUser {
         this.id = id;
     }
 
+    @Override
     @Column(name = "username", unique = true, nullable = false)
     public String getUsername() {
         return username;
@@ -59,6 +69,7 @@ public class RegisteredUser {
         this.username = username;
     }
 
+    @Override
     @Column(name = "password", unique = true)
     public String getPassword() {
         return password;
@@ -153,31 +164,34 @@ public class RegisteredUser {
         isPhoneNoVerified = phoneNoVerified;
     }
 
+    @Override
     @Column(name = "is_account_locked")
-    public Boolean isAccountLocked() {
-        return isAccountLocked;
+    public boolean isAccountNonLocked() {
+        return isAccountNonLocked;
     }
 
-    public void setAccountLocked(Boolean accountLocked) {
-        isAccountLocked = accountLocked;
+    public void setAccountNonLocked(Boolean accountNonLocked) {
+        isAccountNonLocked = accountNonLocked;
     }
 
+    @Override
     @Column(name = "is_account_expired")
-    public Boolean isAccountExpired() {
-        return isAccountExpired;
+    public boolean isAccountNonExpired() {
+        return isAccountNonExpired;
     }
 
-    public void setAccountExpired(Boolean accountExpired) {
-        isAccountExpired = accountExpired;
+    public void setAccountNonExpired(Boolean accountNonExpired) {
+        isAccountNonExpired = accountNonExpired;
     }
 
+    @Override
     @Column(name = "is_credential_expired")
-    public Boolean isCredentialExpired() {
-        return isCredentialExpired;
+    public boolean isCredentialsNonExpired() {
+        return isCredentialsNonExpired;
     }
 
-    public void setCredentialExpired(Boolean credentialExpired) {
-        isCredentialExpired = credentialExpired;
+    public void setCredentialsNonExpired(Boolean credentialsNonExpired) {
+        isCredentialsNonExpired = credentialsNonExpired;
     }
 
     @Column(name = "login_count")
@@ -189,6 +203,43 @@ public class RegisteredUser {
         this.loginCount = loginCount;
     }
 
+
+    @Column(name = "mfa_secret")
+    public String getMfaSecret() {
+        return mfaSecret;
+    }
+
+    public void setMfaSecret(String mfaSecret) {
+        this.mfaSecret = mfaSecret;
+    }
+
+    @Column(name = "mfa_key_id")
+    public String getMfaKeyId() {
+        return mfaKeyId;
+    }
+
+    public void setMfaKeyId(String mfaKeyId) {
+        this.mfaKeyId = mfaKeyId;
+    }
+
+    @Column(name = "mfa_enabled")
+    public Boolean getMfaEnabled() {
+        return mfaEnabled;
+    }
+
+    public void setMfaEnabled(Boolean mfaEnabled) {
+        this.mfaEnabled = mfaEnabled;
+    }
+
+    @Column(name = "mfa_registered")
+    public Boolean getMfaRegistered() {
+        return mfaRegistered;
+    }
+
+    public void setMfaRegistered(Boolean mfaRegistered) {
+        this.mfaRegistered = mfaRegistered;
+    }
+
     @Column(name = "failed_login_attempt")
     public Integer getFailedLoginAttempts() {
         return failedLoginAttempts;
@@ -198,12 +249,28 @@ public class RegisteredUser {
         this.failedLoginAttempts = failedLoginAttempts;
     }
 
+    @Override
     @Column(name = "is_account_active")
-    public Boolean isActive() {
-        return active;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setEnabled(Boolean active) {
+        this.enabled = active;
+    }
+
+    @Column(name = "security_phone_no_enabled")
+    public Boolean getSecurityPhoneNoEnabled() {
+        return securityPhoneNoEnabled;
+    }
+
+    public void setSecurityPhoneNoEnabled(Boolean securityPhoneNoEnabled) {
+        this.securityPhoneNoEnabled = securityPhoneNoEnabled;
+    }
+
+    @Override
+    @Transient
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.emptyList();
     }
 }

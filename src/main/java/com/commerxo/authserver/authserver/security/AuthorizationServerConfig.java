@@ -1,6 +1,7 @@
 package com.commerxo.authserver.authserver.security;
 
 import com.commerxo.authserver.authserver.oauth2.ClientRepository;
+import com.commerxo.authserver.authserver.oauth2.converter.OidcClientMetadataConverter;
 import com.commerxo.authserver.authserver.oauth2.repository.JpaClientRegistrationRepository;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -24,6 +25,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -67,11 +69,15 @@ public class AuthorizationServerConfig {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = http.getConfigurer(OAuth2AuthorizationServerConfigurer.class);
         authorizationServerConfigurer
-                .oidc(oidc -> oidc.clientRegistrationEndpoint(Customizer.withDefaults()))
+                .oidc(oidc -> oidc.clientRegistrationEndpoint(
+                        client ->{
+                            client.authenticationProviders(OidcClientMetadataConverter.oidcClientMetadataConfigurer());
+                        }
+                        ))
                 .authorizationServerSettings(authorizationServerSettings())
-                .registeredClientRepository(registeredClientRepository())
-                .authorizationConsentService(oAuth2AuthorizationConsentService())
-                .authorizationService(oAuth2AuthorizationService());
+                .registeredClientRepository(registeredClientRepository());
+//                .authorizationConsentService(oAuth2AuthorizationConsentService())
+//                .authorizationService(oAuth2AuthorizationService());
 
         http.
                 exceptionHandling(ex -> ex.defaultAuthenticationEntryPointFor(
@@ -91,10 +97,15 @@ public class AuthorizationServerConfig {
         return AuthorizationServerSettings.builder().build();
     }
 
-    @Bean
-    public JdbcOAuth2AuthorizationService oAuth2AuthorizationService(){
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate(), registeredClientRepository());
-    }
+//    @Bean
+//    public OAuth2AuthorizationService oAuth2AuthorizationService(){
+//        JdbcOAuth2AuthorizationService authorizationService =
+//                new JdbcOAuth2AuthorizationService(jdbcTemplate(), registeredClientRepository());
+//        authorizationService.setAuthorizationRowMapper((rs)->{
+//            rs.ge
+//        });
+//        return authorizationService;
+//    }
 
     @Bean
     public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(){

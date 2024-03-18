@@ -28,7 +28,7 @@ public class BruteForceProtectionServiceImpl implements BruteForceProtectionServ
                 .orElseThrow(() -> new UsernameNotFoundException(""));
         int failedCount = registeredUser.getFailedLoginAttempts();
         if(failedCount > failedMaxCount){
-            registeredUser.setAccountLocked(false);
+            registeredUser.setAccountNonLocked(true);
         }else{
             registeredUser.setFailedLoginAttempts(failedCount + 1);
         }
@@ -39,7 +39,7 @@ public class BruteForceProtectionServiceImpl implements BruteForceProtectionServ
     public void resetBruteForceCounter(String username) {
         RegisteredUser registeredUser = this.userRegistrationRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(""));
-        registeredUser.setAccountLocked(false);
+        registeredUser.setAccountNonLocked(true);
         registeredUser.setFailedLoginAttempts(0);
         this.userRegistrationRepository.save(registeredUser);
     }

@@ -1,12 +1,11 @@
 package com.commerxo.authserver.authserver.security;
 
 import com.commerxo.authserver.authserver.repository.JpaUserRegistrationRepository;
-import com.commerxo.authserver.authserver.security.events.AuthenticationFailureListener;
+import com.commerxo.authserver.authserver.security.mfa.MFAHandler;
 import com.commerxo.authserver.authserver.service.RoleService;
 import com.commerxo.authserver.authserver.service.impl.UserRegistrationServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -18,18 +17,18 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.encrypt.BytesEncryptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.DelegatingJwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -44,12 +43,14 @@ public class SecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
     private final JwtDecoder jwtDecoder;
+    private final BytesEncryptor bytesEncryptor;
     private final RoleService roleService;
     private final JpaUserRegistrationRepository userRegistrationRepository;
 
-    public SecurityConfig(PasswordEncoder passwordEncoder, JwtDecoder jwtDecoder, RoleService roleService, JpaUserRegistrationRepository userRegistrationRepository) {
+    public SecurityConfig(PasswordEncoder passwordEncoder, JwtDecoder jwtDecoder, BytesEncryptor bytesEncryptor, RoleService roleService, JpaUserRegistrationRepository userRegistrationRepository) {
         this.passwordEncoder = passwordEncoder;
         this.jwtDecoder = jwtDecoder;
+        this.bytesEncryptor = bytesEncryptor;
         this.roleService = roleService;
         this.userRegistrationRepository = userRegistrationRepository;
     }
@@ -59,7 +60,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
-                    authorize.requestMatchers(ACCOUNT + USER_ACCOUNT_REGISTER).permitAll();
+                    authorize.requestMatchers("/mfa/registration","/registration", "/authenticator").hasAuthority("ROLE_MFA_REQUIRED");
+                    authorize.requestMatchers(ACCOUNT + USER_ACCOUNT_REGISTER, "/login**","/error").permitAll();
                     authorize.anyRequest().authenticated();
                 })
                 // Form login handles the redirect to the login page from the
@@ -72,10 +74,10 @@ public class SecurityConfig {
                 ).exceptionHandling(ex ->
                         ex.authenticationEntryPoint(
                                 (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
-                ).formLogin(
-                        form ->
-                            form.loginPage("/login").permitAll()
-
+                ).formLogin(form -> form
+                        .loginPage("/login")
+                        .successHandler(new MFAHandler("/authenticator","ROLE_MFA_REQUIRED"))
+                        .failureHandler(new SimpleUrlAuthenticationFailureHandler("/login?error"))
                 );
         return http.build();
     }
@@ -135,7 +137,11 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetails(){
-        return new UserRegistrationServiceImpl(userRegistrationRepository, roleService);
+        return new UserRegistrationServiceImpl(userRegistrationRepository, bytesEncryptor, roleService);
     }
 
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler(){
+        return new SavedRequestAwareAuthenticationSuccessHandler();
+    }
 }
