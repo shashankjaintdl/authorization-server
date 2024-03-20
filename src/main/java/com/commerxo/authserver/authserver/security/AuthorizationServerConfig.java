@@ -1,6 +1,7 @@
 package com.commerxo.authserver.authserver.security;
 
 import com.commerxo.authserver.authserver.oauth2.ClientRepository;
+import com.commerxo.authserver.authserver.oauth2.converter.OidcClientMetadataConverter;
 import com.commerxo.authserver.authserver.oauth2.repository.JpaClientRegistrationRepository;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -10,10 +11,12 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -22,6 +25,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -32,6 +36,8 @@ import org.springframework.security.oauth2.server.authorization.settings.OAuth2T
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import javax.sql.DataSource;
 import java.security.KeyPair;
@@ -43,7 +49,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
-import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 @Configuration
 public class AuthorizationServerConfig {
@@ -64,15 +69,20 @@ public class AuthorizationServerConfig {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = http.getConfigurer(OAuth2AuthorizationServerConfigurer.class);
         authorizationServerConfigurer
-                .oidc(oidc -> oidc.clientRegistrationEndpoint(Customizer.withDefaults()))
+                .oidc(oidc -> oidc.clientRegistrationEndpoint(
+                        client ->{
+                            client.authenticationProviders(OidcClientMetadataConverter.oidcClientMetadataConfigurer());
+                        }
+                        ))
                 .authorizationServerSettings(authorizationServerSettings())
-                .registeredClientRepository(registeredClientRepository())
-                .authorizationConsentService(oAuth2AuthorizationConsentService())
-                .authorizationService(oAuth2AuthorizationService());
+                .registeredClientRepository(registeredClientRepository());
+//                .authorizationConsentService(oAuth2AuthorizationConsentService())
+//                .authorizationService(oAuth2AuthorizationService());
 
         http.
-                exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        new LoginUrlAuthenticationEntryPoint("/login")
+                exceptionHandling(ex -> ex.defaultAuthenticationEntryPointFor(
+                        new LoginUrlAuthenticationEntryPoint("/login"),
+                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )).
                 // Accept access tokens for User Info and/or Client Registration
                 oauth2ResourceServer((resourceServer) -> resourceServer
@@ -82,17 +92,20 @@ public class AuthorizationServerConfig {
                 .build();
     }
 
-
-
     @Bean
     public AuthorizationServerSettings authorizationServerSettings(){
         return AuthorizationServerSettings.builder().build();
     }
 
-    @Bean
-    public JdbcOAuth2AuthorizationService oAuth2AuthorizationService(){
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate(), registeredClientRepository());
-    }
+//    @Bean
+//    public OAuth2AuthorizationService oAuth2AuthorizationService(){
+//        JdbcOAuth2AuthorizationService authorizationService =
+//                new JdbcOAuth2AuthorizationService(jdbcTemplate(), registeredClientRepository());
+//        authorizationService.setAuthorizationRowMapper((rs)->{
+//            rs.ge
+//        });
+//        return authorizationService;
+//    }
 
     @Bean
     public OAuth2AuthorizationConsentService oAuth2AuthorizationConsentService(){
@@ -104,15 +117,15 @@ public class AuthorizationServerConfig {
         return new JdbcTemplate(dataSource);
     }
 
-//    @Bean
-//    public SessionRegistry sessionRegistry() {
-//        return new SessionRegistryImpl();
-//    }
-//
-//    @Bean
-//    public HttpSessionEventPublisher httpSessionEventPublisher() {
-//        return new HttpSessionEventPublisher();
-//    }
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() {
@@ -141,6 +154,7 @@ public class AuthorizationServerConfig {
         }
         return keyPair;
     }
+
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);

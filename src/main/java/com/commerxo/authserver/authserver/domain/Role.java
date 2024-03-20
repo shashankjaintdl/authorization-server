@@ -22,7 +22,7 @@ public class Role {
     private String name;
     private String clientName;
     private String description;
-    private boolean active;
+    private Boolean active;
     private List<RegisteredUser> users;
 
     @Id
@@ -55,11 +55,11 @@ public class Role {
     }
 
     @Column(name = "active")
-    public boolean isActive() {
+    public Boolean isActive() {
         return active;
     }
 
-    public void setActive(boolean active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 

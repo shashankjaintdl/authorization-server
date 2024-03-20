@@ -1,6 +1,8 @@
 package com.commerxo.authserver.authserver.exception;
 
-public class ResourceAlreadyExistException extends RuntimeException{
+import org.springframework.web.ErrorResponse;
+
+public class ResourceAlreadyExistException extends RuntimeException  {
     public ResourceAlreadyExistException() {
         super();
     }
@@ -16,4 +18,6 @@ public class ResourceAlreadyExistException extends RuntimeException{
     public ResourceAlreadyExistException(Throwable cause) {
         super(cause);
     }
+
+
 }

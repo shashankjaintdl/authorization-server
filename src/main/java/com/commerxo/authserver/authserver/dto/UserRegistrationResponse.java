@@ -56,7 +56,7 @@ public class UserRegistrationResponse {
         response.setFirstName(registeredUser.getFirstName());
         response.setLastName(registeredUser.getLastName());
         response.setEmailId(registeredUser.getEmailId());
-        response.setActive(registeredUser.isActive());
+        response.setActive(registeredUser.isEnabled());
         return response;
     }
 }

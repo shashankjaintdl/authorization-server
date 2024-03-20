@@ -11,5 +11,7 @@ public interface JpaUserRegistrationRepository extends JpaRepository<RegisteredU
 
     Optional<RegisteredUser> findByUsername(String username);
 
-    Optional<RegisteredUser> findByUsernameAndActive(String username, Boolean active);
+    Optional<RegisteredUser> findByUsernameAndEnabled(String username, Boolean active);
+
+
 }

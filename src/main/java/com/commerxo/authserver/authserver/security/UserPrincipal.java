@@ -20,9 +20,9 @@ public class UserPrincipal implements UserDetails {
     private String username;
     private String password;
     private String emailId;
-    private boolean isAccountNonExpired;
-    private boolean isAccountNonLocked;
-    private boolean isCredentialsNonExpired;
+    private boolean accountExpired;
+    private boolean accountLocked;
+    private boolean credentialsExpired;
     private boolean isEnabled;
     private Set<GrantedAuthority> authorities;
 
@@ -51,17 +51,29 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return this.isAccountNonExpired;
+        return !isAccountExpired();
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return this.isAccountNonLocked;
+        return !isAccountLocked();
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return this.isCredentialsNonExpired;
+        return !isCredentialsExpired();
+    }
+
+    public boolean isAccountExpired() {
+        return accountExpired;
+    }
+
+    public boolean isAccountLocked() {
+        return accountLocked;
+    }
+
+    public boolean isCredentialsExpired() {
+        return credentialsExpired;
     }
 
     @Override
@@ -79,10 +91,11 @@ public class UserPrincipal implements UserDetails {
 
         private String id;
         private String username;
+        private String password;
         private String emailId;
-        private boolean isAccountNonExpired;
-        private boolean isAccountNonLocked;
-        private boolean isCredentialsNonExpired;
+        private boolean accountExpired;
+        private boolean accountLocked;
+        private boolean credentialsExpired;
         private boolean isEnabled;
         private Set<GrantedAuthority> authorities;
 
@@ -95,6 +108,10 @@ public class UserPrincipal implements UserDetails {
             return this;
         }
 
+        public Builder password(String password){
+            this.password = password;
+            return this;
+        }
         public Builder username(String username){
             this.username =  username;
             return this;
@@ -105,18 +122,18 @@ public class UserPrincipal implements UserDetails {
             return this;
         }
 
-        public Builder accountNonExpired(boolean isAccountNonExpired){
-            this.isAccountNonExpired = isAccountNonExpired;
+        public Builder accountExpired(boolean accountExpired){
+            this.accountExpired = accountExpired;
             return this;
         }
 
-        public Builder accountNonLocked(boolean isAccountNonLocked){
-            this.isAccountNonLocked = isAccountNonLocked;
+        public Builder accountLocked(boolean accountLocked){
+            this.accountLocked = accountLocked;
             return this;
         }
 
-        public Builder credentialsExpired(boolean isCredentialsNonExpired){
-            this.isCredentialsNonExpired = isCredentialsNonExpired;
+        public Builder credentialsExpired(boolean credentialsExpired){
+            this.credentialsExpired = credentialsExpired;
             return this;
         }
 
@@ -135,10 +152,10 @@ public class UserPrincipal implements UserDetails {
             principal.id = this.id;
             principal.username = this.username;
             principal.emailId = this.emailId;
-            principal.password = EMPTY_STRING;
-            principal.isAccountNonExpired = this.isAccountNonExpired;
-            principal.isAccountNonLocked = this.isAccountNonLocked;
-            principal.isCredentialsNonExpired = this.isCredentialsNonExpired;
+            principal.password = password;
+            principal.accountExpired = this.accountExpired;
+            principal.accountLocked = this.accountLocked;
+            principal.credentialsExpired = this.credentialsExpired;
             principal.isEnabled = this.isEnabled;
             principal.authorities = this.authorities != null ? Collections.unmodifiableSet(this.authorities) : Collections.emptySet();
             check(principal);
@@ -150,13 +167,13 @@ public class UserPrincipal implements UserDetails {
             if(!principal.isEnabled())
                 throw new DisabledException("Users account is disabled");
 
-            if(!principal.isAccountNonExpired())
+            if(principal.isAccountExpired())
                 throw new AccountExpiredException("Users account is expired");
 
-            if(!principal.isAccountNonLocked())
+            if(principal.isAccountLocked())
                 throw new LockedException("Users account is locked");
 
-            if(!principal.isCredentialsNonExpired())
+            if(principal.isCredentialsExpired())
                 throw new CredentialsExpiredException("user account credential is expired");
 
         }

@@ -9,4 +9,8 @@ public interface UserRegistrationService extends UserDetailsService {
     RegisteredUser createUser(UserRegistrationRequest registrationRequest);
 
     RegisteredUser getByUsername(String username, boolean active);
+
+    void storeMfaSecret(String base32Secret, String username);
+
+    void removeUserInfoMfaRegistered(String username);
 }
