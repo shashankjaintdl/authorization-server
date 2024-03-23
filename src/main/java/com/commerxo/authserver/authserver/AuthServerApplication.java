@@ -25,7 +25,7 @@ public class AuthServerApplication {
 	@EventListener(ApplicationReadyEvent.class)
 	public void send(){
 //		this.service.send("jainshashank562@gmail.com","Test","test");
-		service.sendSms(new SmsRequest("919902642035","Test"));
+//		service.sendSms(new SmsRequest("919902642035","Test"));
 	}
 
 }

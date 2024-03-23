@@ -48,13 +48,13 @@ app:
 
 
 #D2TD6FR7ZKCXRGKHN37Y4TJY
-logging:
-  level:
-    root: DEBUG
-  org:
-    hibernate:
-      SQL: DEBUG
-      type: TRACE
-    springframework:
-      security: DEBUG
-      web: DEBUG
+#logging:
+#  level:
+#    root: DEBUG
+#  org:
+#    hibernate:
+#      SQL: DEBUG
+#      type: TRACE
+#    springframework:
+#      security: DEBUG
+#      web: DEBUG

@@ -17,6 +17,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.encrypt.BytesEncryptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,13 +46,20 @@ public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final BytesEncryptor bytesEncryptor;
     private final RoleService roleService;
+    private final SessionRegistry sessionRegistry;
     private final JpaUserRegistrationRepository userRegistrationRepository;
 
-    public SecurityConfig(PasswordEncoder passwordEncoder, JwtDecoder jwtDecoder, BytesEncryptor bytesEncryptor, RoleService roleService, JpaUserRegistrationRepository userRegistrationRepository) {
+    public SecurityConfig(PasswordEncoder passwordEncoder,
+                          JwtDecoder jwtDecoder,
+                          BytesEncryptor bytesEncryptor,
+                          RoleService roleService,
+                          SessionRegistry sessionRegistry,
+                          JpaUserRegistrationRepository userRegistrationRepository) {
         this.passwordEncoder = passwordEncoder;
         this.jwtDecoder = jwtDecoder;
         this.bytesEncryptor = bytesEncryptor;
         this.roleService = roleService;
+        this.sessionRegistry = sessionRegistry;
         this.userRegistrationRepository = userRegistrationRepository;
     }
 
@@ -60,7 +68,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
-                    authorize.requestMatchers("/mfa/registration","/registration", "/authenticator").hasAuthority("ROLE_MFA_REQUIRED");
+                    authorize.requestMatchers("/registration", "/authenticator").hasAuthority("ROLE_MFA_REQUIRED");
                     authorize.requestMatchers(ACCOUNT + USER_ACCOUNT_REGISTER, "/login**","/error").permitAll();
                     authorize.anyRequest().authenticated();
                 })
@@ -79,6 +87,7 @@ public class SecurityConfig {
                         .successHandler(new MFAHandler("/authenticator","ROLE_MFA_REQUIRED"))
                         .failureHandler(new SimpleUrlAuthenticationFailureHandler("/login?error"))
                 );
+//                .sessionManagement(session->session.maximumSessions(1).sessionRegistry(sessionRegistry));
         return http.build();
     }
 

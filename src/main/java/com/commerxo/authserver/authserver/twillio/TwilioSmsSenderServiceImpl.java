@@ -16,9 +16,17 @@ public class TwilioSmsSenderServiceImpl implements TwilioSmsSenderService{
 
     @Override
     public Message sendSms(SmsRequest smsRequest) {
-        return Message.creator(
-                    new PhoneNumber(smsRequest.getPhoneNo()), new PhoneNumber(twilioConfiguration.getPhoneNo()), smsRequest.getMessage()
-                    ).create();
+        try {
+            if (isPhoneNoValid(smsRequest.getPhoneNo())) {
+                Message.creator(
+                        new PhoneNumber(smsRequest.getPhoneNo()), new PhoneNumber(twilioConfiguration.getPhoneNo()), smsRequest.getMessage()
+                ).create();
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private Boolean isPhoneNoValid(String phoneNo) {
